@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+a2a-sdk
+httpx
+google-auth
+google-cloud-firestore

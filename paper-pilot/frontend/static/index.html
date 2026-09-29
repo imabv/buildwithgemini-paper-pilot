@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: false, theme: 'neutral' });</script>
+<style>
+  :root {
+    --primary: #1a73e8;
+    --primary-dark: #1557b0;
+    --primary-light: #e8f0fe;
+    --bg-main: #f8f9fa;
+    --bg-card: #ffffff;
+    --border: #dadce0;
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --sidebar-w: 420px;
+    --accent-green: #0f9d58;
+    --accent-purple: #9333ea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0.65rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--primary-dark);
+  }
+  .brand span.badge {
+    font-size: 0.72rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+  .project-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f1f3f4;
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+  .project-selector-wrapper select {
+    border: none;
+    background: transparent;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+  }
+  .header-actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-outline {
+    background: #fff;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .btn-outline:hover { background: #f1f3f4; color: var(--text-primary); }
+
+  /* App Layout */
+  .app-container {
+    flex: 1;
+    display: flex;
+    height: calc(100vh - 58px);
+    overflow: hidden;
+  }
+
+  /* Left Sidebar: Projects, Shelf, Documents */
+  aside.sidebar {
+    width: var(--sidebar-w);
+    background: #fff;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Sidebar Tabs */
+  .sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: #fafafa;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 0.65rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    border-bottom: 2px solid transparent;
+  }
+  .tab-btn.active {
+    color: var(--primary);
+    background: #fff;
+    border-bottom-color: var(--primary);
+  }
+
+  .tab-content {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .tab-content.active { display: flex; }
+
+  .sidebar-filter-bar {
+    padding: 0.75rem 0.85rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-box {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 0.4rem 0.6rem 0.4rem 2rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.82rem;
+  }
+  .search-box .icon {
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+  }
+  .topic-chips {
+    display: flex;
+    gap: 0.3rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+  .chip {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    background: #f1f3f4;
+    border-radius: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .chip.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .item-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  /* Cards */
+  .resource-card, .doc-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .resource-card:hover, .doc-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .res-title {
+    font-weight: 600;
+    font-size: 0.86rem;
+    line-height: 1.3;
+    color: var(--text-primary);
+    flex: 1;
+  }
+  .res-meta {
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Tags Row */
+  .card-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.15rem;
+  }
+  .tag-badge {
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: opacity 0.15s;
+  }
+  .tag-badge:hover { opacity: 0.8; }
+  .badge-report { background: #ede9fe; color: var(--accent-purple); }
+  .badge-draft { background: #e6f4ea; color: var(--accent-green); }
+  .badge-paper { background: #e8f0fe; color: var(--primary); }
+
+  .lib-toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9aa0a6;
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+  .lib-toggle-btn.in-lib { color: #f29900; }
+  .lib-toggle-btn:hover { color: #e37400; }
+
+  /* Quick Actions Bar */
+  .quick-prompts {
+    padding: 0.6rem;
+    background: #fafafa;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .quick-btn {
+    font-size: 0.72rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    color: var(--text-primary);
+  }
+  .quick-btn:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+  /* Right Pane: Conversational Stream */
+  main.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f8f9fa;
+    position: relative;
+  }
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 880px;
+    width: 100%;
+  }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.agent { align-self: flex-start; align-items: flex-start; }
+  
+  .sender-tag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .bubble {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    line-height: 1.6;
+    font-size: 0.92rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .msg.user .bubble {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-bottom-right-radius: 2px;
+    white-space: pre-wrap;
+  }
+  .bubble.rich {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    box-shadow: none;
+  }
+
+  /* A2UI Component Styles */
+  .a2card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    max-width: 100%;
+  }
+  .a2card + .a2card, .a2col > .a2card { margin-top: 0.6rem; }
+  .a2col { display: flex; flex-direction: column; gap: 0.5rem; }
+  .a2row { display: flex; flex-direction: row; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  .a2text { margin: 0; line-height: 1.5; color: var(--text-primary); }
+  .a2text.a2-h1 { font-size: 1.35rem; font-weight: 700; color: var(--primary-dark); }
+  .a2text.a2-h2 { font-size: 1.15rem; font-weight: 700; color: var(--primary-dark); }
+  .a2text.a2-h3 { font-size: 1.05rem; font-weight: 600; color: var(--primary-dark); }
+  .a2text.a2-h4 { font-size: 0.95rem; font-weight: 600; }
+  .a2text.a2-caption { font-size: 0.8rem; color: var(--text-secondary); }
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 8px; display: block; }
+
+  /* Formatted Report Styling */
+  .bubble h1, .bubble h2, .bubble h3 { color: var(--primary-dark); margin-top: 1rem; margin-bottom: 0.4rem; }
+  .bubble h1 { font-size: 1.35rem; border-bottom: 2px solid var(--primary-light); padding-bottom: 0.3rem; }
+  .bubble h2 { font-size: 1.15rem; }
+  .bubble h3 { font-size: 1rem; }
+  .bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.8rem 0;
+    font-size: 0.85rem;
+  }
+  .bubble th, .bubble td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .bubble th {
+    background: #f1f3f4;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .bubble tr:nth-child(even) { background: #fafafa; }
+  .bubble blockquote {
+    border-left: 4px solid var(--primary);
+    margin: 0.6rem 0;
+    padding: 0.4rem 0.8rem;
+    background: #f8f9fa;
+    color: var(--text-secondary);
+  }
+  .bubble code {
+    background: #f1f3f4;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+  .report-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ede9fe;
+    border: 1px solid #c4b5fd;
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #5b21b6;
+    font-weight: 600;
+  }
+
+  /* Visual Artifact Embed */
+  .visual-card-embed {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem;
+    margin: 0.8rem 0;
+    text-align: center;
+  }
+  .visual-card-embed img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .visual-caption {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+  }
+
+  /* Chat Input Form */
+  form#chat-form {
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  form#chat-form input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+  }
+  form#chat-form input:focus { border-color: var(--primary); }
+
+  /* Modals */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 520px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .modal h3 { margin-top: 0; font-size: 1.15rem; color: var(--text-primary); }
+  .form-group {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .form-group label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    padding: 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.88rem;
+  }
+  .form-radio-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.2rem;
+  }
+  .form-radio-row label {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+  }
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="material-symbols-outlined" style="font-size:1.6rem; color:var(--primary);">auto_stories</span>
+    PaperPilot
+    <span class="badge">Research Copilot</span>
+  </div>
+
+  <div class="project-selector-wrapper">
+    <span class="material-symbols-outlined" style="font-size:1.1rem; color:var(--text-secondary);">folder_open</span>
+    <span>Project:</span>
+    <select id="project-select" onchange="onProjectChange()">
+      <option value="proj-default">General Literature Synthesis</option>
+    </select>
+    <button class="btn-outline" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="openNewProjectModal()">+ New Project</button>
+  </div>
+
+  <div class="header-actions">
+    <button class="btn-primary" onclick="openUploadModal()">
+      <span class="material-symbols-outlined" style="font-size:1.1rem;">upload_file</span>
+      Upload Document / Paper
+    </button>
+  </div>
+</header>
+
+<div class="app-container">
+  <!-- Left Sidebar -->
+  <aside class="sidebar">
+    <!-- Tabs: Project Library, Literature Catalog, My Documents -->
+    <div class="sidebar-tabs">
+      <button class="tab-btn active" id="tab-btn-library" onclick="switchSidebarTab('library')">
+        <span class="material-symbols-outlined" style="font-size:1rem;">local_library</span>
+        Project Library (<span id="lib-count">0</span>)
+      </button>
+      <button class="tab-btn" id="tab-btn-catalog" onclick="switchSidebarTab('catalog')">
+        <span class="material-symbols-outlined" style="font-size:1rem;">travel_explore</span>
+        All Catalog
+      </button>
+      <button class="tab-btn" id="tab-btn-docs" onclick="switchSidebarTab('docs')">
+        <span class="material-symbols-outlined" style="font-size:1rem;">description</span>
+        My Documents
+      </button>
+    </div>
+
+    <!-- TAB 1: Project Library -->
+    <div class="tab-content active" id="tab-content-library">
+      <div class="sidebar-filter-bar">
+        <div class="search-box">
+          <span class="material-symbols-outlined icon">search</span>
+          <input type="text" id="lib-search" placeholder="Search in project library..." oninput="filterProjectLibrary()">
+        </div>
+      </div>
+      <div class="item-list" id="project-library-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- TAB 2: Full Catalog -->
+    <div class="tab-content" id="tab-content-catalog">
+      <div class="sidebar-filter-bar">
+        <div class="search-box">
+          <span class="material-symbols-outlined icon">search</span>
+          <input type="text" id="cat-search" placeholder="Filter literature papers..." oninput="filterCatalog()">
+        </div>
+        <div class="topic-chips" id="topic-chips">
+          <span class="chip active" onclick="setTopicFilter('All')">All</span>
+          <span class="chip" onclick="setTopicFilter('Retrieval Augmented Generation')">RAG</span>
+          <span class="chip" onclick="setTopicFilter('Vector Retrieval')">Vectors</span>
+          <span class="chip" onclick="setTopicFilter('GraphRAG')">Graph</span>
+          <span class="chip" onclick="setTopicFilter('Quantum Computing')">Quantum</span>
+        </div>
+      </div>
+      <div class="item-list" id="catalog-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- TAB 3: User Documents (Notes, Drafts & Generated Reports) -->
+    <div class="tab-content" id="tab-content-docs">
+      <div class="sidebar-filter-bar">
+        <div class="search-box">
+          <span class="material-symbols-outlined icon">search</span>
+          <input type="text" id="docs-search" placeholder="Search notes, drafts & reports..." oninput="filterUserDocs()">
+        </div>
+      </div>
+      <div class="item-list" id="user-docs-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Quick Prompts Bar -->
+    <div class="quick-prompts">
+      <button class="quick-btn" onclick="sendPrompt('Generate a comprehensive synthesis report for our project library.')">📊 Synthesize Library</button>
+      <button class="quick-btn" onclick="sendPrompt('Generate a conceptual architecture visual artifact for our research synthesis.')">🎨 Visual Synthesis</button>
+      <button class="quick-btn" onclick="sendPrompt('Audit our project draft against the literature in our project library.')">🔍 Audit Draft</button>
+      <button class="quick-btn" onclick="sendPrompt('Search arXiv for recent papers on Retrieval Augmented Generation.')">🌐 Search arXiv</button>
+    </div>
+  </aside>
+
+  <!-- Right Pane: Conversational Stream & Beautiful Reports -->
+  <main class="chat-area">
+    <div id="log">
+      <div class="msg agent">
+        <div class="sender-tag">
+          <span class="material-symbols-outlined" style="font-size:1rem; color:var(--primary);">smart_toy</span>
+          PaperPilot Assistant
+        </div>
+        <div class="bubble">
+          👋 Welcome to <b>PaperPilot</b>!
+          <br><br>
+          • <b>Connected Paper Tags:</b> Click on any tag badge on a paper card to filter and explore related papers across that topic.
+          <br>
+          • <b>Visual Synthesis:</b> Click <b>🎨 Visual Synthesis</b> or ask the assistant to generate a publication-grade conceptual diagram.
+          <br>
+          • <b>Project Library:</b> Curate literature with the bookmark star, upload your own drafts, and view generated reports in <i>My Documents</i>.
+        </div>
+      </div>
+    </div>
+
+    <form id="chat-form">
+      <input id="chat-input" placeholder="Ask about library papers, request visual synthesis, or audit drafts..." autocomplete="off" autofocus>
+      <button class="btn-primary" type="submit">
+        <span class="material-symbols-outlined" style="font-size:1.1rem;">send</span>
+        Send
+      </button>
+    </form>
+  </main>
+</div>
+
+<!-- Modal 1: Create New Project -->
+<div class="modal-overlay" id="project-modal">
+  <div class="modal">
+    <h3>Create New Research Project</h3>
+    <div class="form-group">
+      <label>Project Name</label>
+      <input type="text" id="p-name" placeholder="e.g. Graph Retrieval & Multi-hop Reasoning">
+    </div>
+    <div class="form-group">
+      <label>Core Research Topic</label>
+      <input type="text" id="p-topic" placeholder="e.g. Retrieval Augmented Generation">
+    </div>
+    <div class="form-group">
+      <label>Description / Hypothesis</label>
+      <textarea id="p-desc" rows="3" placeholder="Brief project goals or research thesis..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('project-modal')">Cancel</button>
+      <button class="btn-primary" onclick="submitNewProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2: Upload Document / Paper -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <h3>Upload Document or Paper</h3>
+    
+    <div class="form-group">
+      <label>Destination & Role</label>
+      <div class="form-radio-row">
+        <label>
+          <input type="radio" name="doc-dest" value="user_document" checked onchange="toggleUploadTypeFields()">
+          <b>User Document</b> (Draft or Note)
+        </label>
+        <label>
+          <input type="radio" name="doc-dest" value="paper_resource" onchange="toggleUploadTypeFields()">
+          <b>Paper Resource</b> (Academic Literature)
+        </label>
+      </div>
+      <small style="color:var(--text-secondary); margin-top:0.2rem;">
+        User documents appear in "My Documents" for report auditing; Paper resources are indexed into your library shelf.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label>Document Title</label>
+      <input type="text" id="u-title" placeholder="e.g. Preliminary Findings on Embedding Quantization">
+    </div>
+
+    <div class="form-group" id="group-u-authors" style="display:none;">
+      <label>Authors (comma-separated)</label>
+      <input type="text" id="u-authors" placeholder="e.g. J. Doe, A. Smith">
+    </div>
+
+    <div class="form-group">
+      <label>Topic / Tags (comma-separated)</label>
+      <input type="text" id="u-topic" placeholder="e.g. Vector Retrieval, Quantization">
+    </div>
+
+    <div class="form-group">
+      <label>Upload File (PDF or TXT)</label>
+      <input type="file" id="u-file" accept=".pdf,.txt,.md">
+    </div>
+
+    <div class="form-group">
+      <label>Or Paste Raw Text / Manuscript</label>
+      <textarea id="u-text" rows="4" placeholder="Paste notes, abstract, or draft manuscript text..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('upload-modal')">Cancel</button>
+      <button class="btn-primary" onclick="submitUploadDocument()">Upload & Index</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let projects = [];
+let currentProjectId = "proj-default";
+let allResources = [];
+let userDocuments = [];
+let currentTopic = "All";
+
+// DOM Elements
+const log = document.getElementById("log");
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+function openNewProjectModal() { openModal("project-modal"); }
+function openUploadModal() { openModal("upload-modal"); }
+
+function toggleUploadTypeFields() {
+  const isPaper = document.querySelector('input[name="doc-dest"]:checked').value === "paper_resource";
+  document.getElementById("group-u-authors").style.display = isPaper ? "flex" : "none";
+}
+
+function switchSidebarTab(tab) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  document.getElementById(`tab-btn-${tab}`).classList.add("active");
+  document.getElementById(`tab-content-${tab}`).classList.add("active");
+}
+
+/* -------------------------------------------------------------
+ * Projects Management
+ * ----------------------------------------------------------- */
+async function loadProjects() {
+  try {
+    const res = await fetch("/api/projects");
+    const data = await res.json();
+    projects = data.projects || [];
+    
+    const select = document.getElementById("project-select");
+    select.innerHTML = "";
+    projects.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name;
+      if (p.id === currentProjectId) opt.selected = true;
+      select.appendChild(opt);
+    });
+    renderAll();
+  } catch (err) {
+    console.error("Failed loading projects:", err);
+  }
+}
+
+async function onProjectChange() {
+  currentProjectId = document.getElementById("project-select").value;
+  renderAll();
+}
+
+async function submitNewProject() {
+  const name = document.getElementById("p-name").value.trim();
+  const topic = document.getElementById("p-topic").value.trim();
+  const desc = document.getElementById("p-desc").value.trim();
+  if (!name) return alert("Please provide a project name.");
+
+  try {
+    const res = await fetch("/api/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, topic, description: desc })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal("project-modal");
+      document.getElementById("p-name").value = "";
+      document.getElementById("p-topic").value = "";
+      document.getElementById("p-desc").value = "";
+      currentProjectId = data.project.id;
+      await loadProjects();
+    }
+  } catch (e) {
+    alert("Error creating project: " + e.message);
+  }
+}
+
+/* -------------------------------------------------------------
+ * Toggle Papers In/Out of Current Project Library
+ * ----------------------------------------------------------- */
+async function togglePaperLibrary(e, paperId) {
+  e.stopPropagation();
+  const currentProj = projects.find(p => p.id === currentProjectId);
+  if (!currentProj) return;
+
+  const currentPapers = currentProj.paper_ids || [];
+  const action = currentPapers.includes(paperId) ? "remove" : "add";
+
+  try {
+    const res = await fetch(`/api/projects/${currentProjectId}/papers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paper_id: paperId, action })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentProj.paper_ids = data.paper_ids;
+      renderAll();
+    }
+  } catch (e) {
+    console.error("Error toggling paper library:", e);
+  }
+}
+
+/* -------------------------------------------------------------
+ * Resources & User Documents Ingestion
+ * ----------------------------------------------------------- */
+async function loadResources() {
+  try {
+    const res = await fetch("/api/resources");
+    const data = await res.json();
+    allResources = data.resources || [];
+    renderAll();
+  } catch (err) {
+    console.error("Failed loading resources:", err);
+  }
+}
+
+async function loadUserDocuments() {
+  try {
+    const res = await fetch("/api/user_documents");
+    const data = await res.json();
+    userDocuments = data.documents || [];
+    renderUserDocuments();
+  } catch (err) {
+    console.error("Failed loading user documents:", err);
+  }
+}
+
+async function submitUploadDocument() {
+  const dest = document.querySelector('input[name="doc-dest"]:checked').value;
+  const title = document.getElementById("u-title").value.trim();
+  const authors = document.getElementById("u-authors").value.trim();
+  const topic = document.getElementById("u-topic").value.trim() || "General";
+  const fileInput = document.getElementById("u-file");
+  const textContent = document.getElementById("u-text").value.trim();
+
+  if (!title) return alert("Please specify a document title.");
+  if (!fileInput.files[0] && !textContent) return alert("Please attach a file or enter text.");
+
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("doc_destination", dest);
+  formData.append("project_id", currentProjectId);
+  formData.append("topic", topic);
+  if (authors) formData.append("authors", authors);
+  if (fileInput.files[0]) formData.append("file", fileInput.files[0]);
+  if (textContent) formData.append("text_content", textContent);
+
+  try {
+    const res = await fetch("/api/upload_document", {
+      method: "POST",
+      body: formData
+    });
+    const result = await res.json();
+    if (result.success) {
+      closeModal("upload-modal");
+      document.getElementById("u-title").value = "";
+      document.getElementById("u-topic").value = "";
+      document.getElementById("u-text").value = "";
+      fileInput.value = "";
+      
+      await loadResources();
+      await loadUserDocuments();
+
+      if (dest === "paper_resource") {
+        sendPrompt(`I added "${title}" as a scientific paper resource in our library. Can you summarize its core assumptions and findings?`);
+      } else {
+        sendPrompt(`I uploaded a user document titled "${title}". Can you audit its key claims against our project library?`);
+      }
+    } else {
+      alert("Upload failed: " + (result.error || "Unknown error"));
+    }
+  } catch (e) {
+    alert("Upload failed: " + e.message);
+  }
+}
+
+/* -------------------------------------------------------------
+ * Rendering Logic & Connected Paper Tags
+ * ----------------------------------------------------------- */
+function renderAll() {
+  renderProjectLibrary();
+  renderCatalog();
+  renderUserDocuments();
+}
+
+function renderProjectLibrary() {
+  const list = document.getElementById("project-library-list");
+  list.innerHTML = "";
+  const currentProj = projects.find(p => p.id === currentProjectId);
+  const projPaperIds = new Set(currentProj?.paper_ids || []);
+
+  const libraryPapers = allResources.filter(r => projPaperIds.has(r.id));
+  document.getElementById("lib-count").textContent = libraryPapers.length;
+
+  const q = document.getElementById("lib-search").value.toLowerCase();
+  const filtered = libraryPapers.filter(r => {
+    const rawTags = r.topic_tags || r.tags || [];
+    const tags = Array.isArray(rawTags) ? rawTags : [rawTags];
+    return (r.title && r.title.toLowerCase().includes(q)) || 
+           (r.summary && r.summary.toLowerCase().includes(q)) ||
+           (tags.some(t => String(t).toLowerCase().includes(q)));
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = `
+      <div style="text-align:center; padding:1.5rem; color:var(--text-secondary); font-size:0.85rem;">
+        No papers added to this project library yet.<br><br>
+        Browse the <b>All Catalog</b> tab and click the bookmark star to curate papers into this project!
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach(r => list.appendChild(createPaperCard(r, true)));
+}
+
+function renderCatalog() {
+  const list = document.getElementById("catalog-list");
+  list.innerHTML = "";
+  const q = document.getElementById("cat-search").value.toLowerCase();
+  const currentProj = projects.find(p => p.id === currentProjectId);
+  const projPaperIds = new Set(currentProj?.paper_ids || []);
+
+  let filtered = allResources.filter(r => {
+    const rawTags = r.topic_tags || r.tags || [];
+    const tags = Array.isArray(rawTags) ? rawTags : [rawTags];
+    if (currentTopic !== "All") {
+      const lowerTags = tags.map(t => String(t).toLowerCase());
+      if (!lowerTags.some(t => t.includes(currentTopic.toLowerCase()))) return false;
+    }
+    if (q) {
+      return (r.title && r.title.toLowerCase().includes(q)) || 
+             (r.summary && r.summary.toLowerCase().includes(q)) ||
+             (tags.some(t => String(t).toLowerCase().includes(q)));
+    }
+    return true;
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-secondary); font-size:0.85rem;">No matching catalog literature found.</div>`;
+    return;
+  }
+
+  filtered.forEach(r => {
+    const isInLib = projPaperIds.has(r.id);
+    list.appendChild(createPaperCard(r, isInLib));
+  });
+}
+
+function filterByTag(e, tag) {
+  e.stopPropagation();
+  switchSidebarTab("catalog");
+  setTopicFilter(tag);
+  sendPrompt(`Find all papers in our library and catalog related to tag: "${tag}".`);
+}
+
+function createPaperCard(r, inLib) {
+  const card = document.createElement("div");
+  card.className = "resource-card";
+  card.onclick = () => sendPrompt(`Summarize the core arguments and conclusions of paper "${r.title}".`);
+
+  const authors = Array.isArray(r.authors) ? r.authors.slice(0, 2).join(", ") : (r.authors || "Unknown");
+  const starIcon = inLib ? "star" : "star_border";
+  const starClass = inLib ? "in-lib" : "";
+
+  // Connect paper tags explicitly to the card
+  const rawTags = r.topic_tags || r.tags || [];
+  const tags = Array.isArray(rawTags) ? rawTags : [rawTags];
+  const displayTags = tags.length ? tags : ["General"];
+  const tagsHtml = displayTags.map(t => 
+    `<span class="tag-badge badge-paper" title="Filter by tag: ${t}" onclick="filterByTag(event, '${String(t).replace(/'/g, "\\'")}')">🏷️ ${t}</span>`
+  ).join(" ");
+
+  card.innerHTML = `
+    <div class="card-header-row">
+      <span class="res-title">${r.title || 'Untitled'}</span>
+      <button class="lib-toggle-btn ${starClass}" title="${inLib ? 'Remove from Project Library' : 'Save to Project Library'}" onclick="togglePaperLibrary(event, '${r.id}')">
+        <span class="material-symbols-outlined" style="font-size:1.25rem;">${starIcon}</span>
+      </button>
+    </div>
+    <div class="res-meta">
+      <span>${authors}</span>
+      <span>${r.year || 2025}</span>
+    </div>
+    <div class="card-tags-row">
+      ${tagsHtml}
+    </div>
+  `;
+  return card;
+}
+
+function renderUserDocuments() {
+  const list = document.getElementById("user-docs-list");
+  list.innerHTML = "";
+  const q = document.getElementById("docs-search").value.toLowerCase();
+
+  const filtered = userDocuments.filter(d => 
+    (d.title && d.title.toLowerCase().includes(q)) ||
+    (d.content && d.content.toLowerCase().includes(q))
+  );
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-secondary); font-size:0.85rem;">No personal drafts or generated reports yet.</div>`;
+    return;
+  }
+
+  filtered.forEach(d => {
+    const card = document.createElement("div");
+    card.className = "doc-card";
+    const isReport = d.doc_type === "generated_report";
+    const badgeClass = isReport ? "badge-report" : "badge-draft";
+    const badgeLabel = isReport ? "Generated Report" : "User Draft";
+
+    card.onclick = () => {
+      if (isReport) {
+        appendReportBubble("agent", d.content, d.title);
+      } else {
+        sendPrompt(`Audit my user draft titled "${d.title}" against our project library.`);
+      }
+    };
+
+    card.innerHTML = `
+      <div class="card-header-row">
+        <span class="res-title">${d.title}</span>
+        <span class="tag-badge ${badgeClass}">${badgeLabel}</span>
+      </div>
+      <div class="res-meta">
+        <span>${new Date(d.created_at || Date.now()).toLocaleDateString()}</span>
+        <span>${d.topic || 'Research'}</span>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function setTopicFilter(t) {
+  currentTopic = t;
+  document.querySelectorAll("#topic-chips .chip").forEach(c => {
+    const match = (t === "All" && c.textContent === "All") || 
+                  (t.toLowerCase().includes("rag") && c.textContent === "RAG") ||
+                  (t.toLowerCase().includes("vector") && c.textContent === "Vectors") ||
+                  (t.toLowerCase().includes("graph") && c.textContent === "Graph") ||
+                  (t.toLowerCase().includes("quantum") && c.textContent === "Quantum");
+    c.classList.toggle("active", match);
+  });
+  renderCatalog();
+}
+
+function filterProjectLibrary() { renderProjectLibrary(); }
+function filterCatalog() { renderCatalog(); }
+function filterUserDocs() { renderUserDocuments(); }
+
+/* -------------------------------------------------------------
+ * Chat & Report & Visual Synthesis Rendering
+ * ----------------------------------------------------------- */
+function sendPrompt(text) {
+  chatInput.value = text;
+  chatForm.dispatchEvent(new Event("submit"));
+}
+
+function formatContentWithVisuals(rawText) {
+  let content = rawText || "";
+  // If plain https image URL is emitted without markdown tags, turn it into markdown image
+  content = content.replace(/(https:\/\/storage\.googleapis\.com\/[^\s"')]+(?:\.png|\.jpg|\.jpeg|\.webp))/gi, '![]($1)');
+  
+  const html = marked.parse(content);
+  return html.replace(
+    /<img\s+src="([^"]+)"(?:\s+alt="([^"]*)")?[^>]*>/gi,
+    '<div class="visual-card-embed"><img src="$1" alt="$2"><div class="visual-caption">🎨 Visual Synthesis: $2</div></div>'
+  );
+}
+
+function appendBubble(who, text, sender) {
+  const m = document.createElement("div");
+  m.className = "msg " + who;
+  
+  const tag = document.createElement("div");
+  tag.className = "sender-tag";
+  tag.innerHTML = `<span class="material-symbols-outlined" style="font-size:1rem; color:var(--primary);">${who === 'user' ? 'person' : 'smart_toy'}</span> ${sender}`;
+  
+  const b = document.createElement("div");
+  b.className = "bubble";
+  b.innerHTML = formatContentWithVisuals(text || "");
+  
+  m.appendChild(tag);
+  m.appendChild(b);
+  log.appendChild(m);
+  log.scrollTop = log.scrollHeight;
+
+  // Convert any code.language-mermaid elements into live SVG diagrams
+  if (window.mermaid) {
+    b.querySelectorAll("pre code.language-mermaid").forEach((el, idx) => {
+      const graphDef = el.textContent;
+      const container = document.createElement("div");
+      container.className = "mermaid-diagram";
+      el.parentElement.replaceWith(container);
+      mermaid.render(`mermaid-svg-${Date.now()}-${idx}`, graphDef).then(({ svg }) => {
+        container.innerHTML = svg;
+      }).catch(err => {
+        console.warn("Mermaid rendering warning:", err);
+      });
+    });
+  }
+
+  return b;
+}
+
+function appendReportBubble(who, markdown, title) {
+  const m = document.createElement("div");
+  m.className = "msg " + who;
+  
+  const tag = document.createElement("div");
+  tag.className = "sender-tag";
+  tag.innerHTML = `<span class="material-symbols-outlined" style="font-size:1rem; color:var(--accent-purple);">article</span> PaperPilot Synthesis Engine`;
+  
+  const b = document.createElement("div");
+  b.className = "bubble";
+  
+  b.innerHTML = `
+    <div class="report-banner">
+      <span>📑 SAVED TO MY DOCUMENTS: ${title}</span>
+      <span class="material-symbols-outlined" style="font-size:1.1rem;">check_circle</span>
+    </div>
+    ${formatContentWithVisuals(markdown || "")}
+  `;
+  
+  m.appendChild(tag);
+  m.appendChild(b);
+  log.appendChild(m);
+  log.scrollTop = log.scrollHeight;
+
+  if (window.mermaid) {
+    b.querySelectorAll("pre code.language-mermaid").forEach((el, idx) => {
+      const graphDef = el.textContent;
+      const container = document.createElement("div");
+      container.className = "mermaid-diagram";
+      el.parentElement.replaceWith(container);
+      mermaid.render(`mermaid-report-svg-${Date.now()}-${idx}`, graphDef).then(({ svg }) => {
+        container.innerHTML = svg;
+      }).catch(err => {
+        console.warn("Mermaid report rendering warning:", err);
+      });
+    });
+  }
+}
+
+/* -------------------------------------------------------------
+ * A2UI Client Renderer (v0.8 Support)
+ * ----------------------------------------------------------- */
+function boundStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.literalString === "string") return v.literalString;
+  return "";
+}
+
+function childIds(props) {
+  const ids = [];
+  if (props && typeof props.child === "string") ids.push(props.child);
+  const ch = props && props.children;
+  if (ch && Array.isArray(ch.explicitList)) {
+    for (const c of ch.explicitList) if (typeof c === "string") ids.push(c);
+  }
+  return ids;
+}
+
+function iconName(n) {
+  return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase();
+}
+
+function buildA2uiNode(id, comps, seen) {
+  if (!id || seen.has(id)) return null;
+  seen.add(id);
+  const spec = comps[id];
+  if (!spec || typeof spec !== "object") return null;
+  const type = Object.keys(spec)[0];
+  const props = spec[type] || {};
+  const kids = () => childIds(props).map(cid => buildA2uiNode(cid, comps, seen)).filter(Boolean);
+
+  switch (type) {
+    case "Card": {
+      const d = document.createElement("div");
+      d.className = "a2card";
+      kids().forEach(n => d.appendChild(n));
+      return d;
+    }
+    case "Column":
+    case "List": {
+      const horizontal = type === "List" && props.direction === "horizontal";
+      const d = document.createElement("div");
+      d.className = horizontal ? "a2row" : "a2col";
+      kids().forEach(n => d.appendChild(n));
+      return d;
+    }
+    case "Row": {
+      const d = document.createElement("div");
+      d.className = "a2row" + (props.distribution === "spaceBetween" ? " between" : "");
+      kids().forEach(n => d.appendChild(n));
+      return d;
+    }
+    case "Text": {
+      const t = document.createElement("div");
+      t.className = "a2text";
+      const hint = String(props.usageHint || "body").toLowerCase();
+      if (["h1", "h2", "h3", "h4", "h5", "h6"].includes(hint)) t.classList.add("a2-" + hint);
+      else if (hint === "caption") t.classList.add("a2-caption");
+      t.textContent = boundStr(props.text);
+      return t;
+    }
+    case "Divider": {
+      const hr = document.createElement("hr");
+      hr.className = "a2divider";
+      return hr;
+    }
+    case "Image": {
+      const src = boundStr(props.url || props.src);
+      if (!/^https?:\/\//i.test(src)) return null;
+      const img = document.createElement("img");
+      img.className = "a2img";
+      img.src = src;
+      img.alt = boundStr(props.alt) || "";
+      return img;
+    }
+    case "Icon": {
+      const s = document.createElement("span");
+      s.className = "material-symbols-outlined";
+      s.textContent = iconName(boundStr(props.name) || props.name);
+      return s;
+    }
+    default:
+      return null;
+  }
+}
+
+function renderA2uiSurface(messages, container) {
+  const comps = {};
+  const roots = [];
+  for (const m of messages) {
+    if (m.beginRendering && typeof m.beginRendering.root === "string") {
+      roots.push(m.beginRendering.root);
+    }
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) {
+      for (const c of su.components) {
+        if (c && c.id && c.component) comps[c.id] = c.component;
+      }
+    }
+  }
+  let rootIds = roots.filter(r => comps[r]);
+  if (rootIds.length === 0) {
+    const referenced = new Set();
+    for (const id in comps) {
+      const spec = comps[id];
+      childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c));
+    }
+    rootIds = Object.keys(comps).filter(id => !referenced.has(id));
+  }
+  let drew = false;
+  for (const rid of rootIds) {
+    const node = buildA2uiNode(rid, comps, new Set());
+    if (node) {
+      container.appendChild(node);
+      drew = true;
+    }
+  }
+  return drew;
+}
+
+function flattenA2uiText(messages) {
+  const out = [];
+  for (const m of messages) {
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) {
+      for (const c of su.components) {
+        if (c && c.component && c.component.Text) {
+          out.push(boundStr(c.component.Text.text));
+        }
+      }
+    }
+  }
+  return out.join("\n").trim();
+}
+
+chatForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  appendBubble("user", text, "You");
+  chatInput.value = "";
+
+  const thinking = appendBubble("agent", "_Analyzing literature library and executing synthesis..._", "PaperPilot");
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, project_id: currentProjectId }),
+    });
+    const data = await res.json();
+    
+    // Remove temporary thinking bubble container
+    thinking.parentElement.remove();
+
+    const parts = data.parts || [];
+    let drewAnything = false;
+
+    // Check for A2UI parts
+    const a2uiParts = parts.filter(p => p.kind === "a2ui" && p.data).map(p => p.data);
+    if (a2uiParts.length > 0) {
+      const cardBubble = appendBubble("agent", "", "PaperPilot Structured Summary");
+      cardBubble.classList.add("rich");
+      const rendered = renderA2uiSurface(a2uiParts, cardBubble);
+      if (!rendered) {
+        cardBubble.innerHTML = formatContentWithVisuals(flattenA2uiText(a2uiParts) || "");
+      }
+      drewAnything = true;
+    }
+
+    for (const p of parts) {
+      if (p.kind === "text" && p.text) {
+        if (data.saved_report) {
+          appendReportBubble("agent", p.text, data.saved_report.title);
+          await loadUserDocuments(); // Refresh My Documents tab
+        } else {
+          appendBubble("agent", p.text, "PaperPilot Assistant");
+        }
+        drewAnything = true;
+      }
+    }
+
+    if (!drewAnything) {
+      appendBubble("agent", "(Action completed without textual feedback.)", "PaperPilot Assistant");
+    }
+  } catch (err) {
+    thinking.innerHTML = "Error: " + err.message;
+  }
+  log.scrollTop = log.scrollHeight;
+});
+
+// Initial boot
+loadProjects();
+loadResources();
+loadUserDocuments();
+</script>
+</body>
+</html>
