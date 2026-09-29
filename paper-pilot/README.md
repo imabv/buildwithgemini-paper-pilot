@@ -18,7 +18,7 @@ PaperPilot acts as an autonomous pair-researcher for scientists and engineers na
 - **Draft & Report Grounding Audits**: Audits user-submitted draft manuscripts and project notes against the curated library corpus, flagging ungrounded claims and corroborating statements.
 - **Literature Synthesis Consolidation**: Synthesizes multi-paper findings, notes, and contradiction matrices into structured comparative review dossiers.
 - **Academic Visual Synthesis Posters**: Automatically designs publication-grade research posters for either the project library or manuscript drafts, visualizing themes, methodology matrices, and claim validation networks.
-- **Gemini Omni Video Generation**: Uses Google's Omni model (`gemini-omni-flash-preview`) to generate concise scientific summary videos, storing them in the ADK Artifacts panel and streaming to Google Cloud Storage.
+- **Gemini Omni Video Generation**: Uses Google's Omni model (`gemini-omni-flash-preview`) to generate concise scientific summary videos, storing them in the ADK Artifacts panel and streaming to Google Cloud Storage (sample included in [`presentation_video.mp4`](./presentation_video.mp4)).
 - **Scientific Visual Generator**: Programmatically generates publication-style conceptual architecture diagrams and graphical abstracts, automatically hosting them on Google Cloud Storage.
 - **Agent-First UI (A2UI)**: Returns native A2UI v0.8 cards using the Basic Catalog, rendering structured visual cards, metadata columns, and diagram previews.
 - **Multi-Project Management**: Supports distinct project workspaces with separate library collections, user drafts, and isolated conversational contexts.
