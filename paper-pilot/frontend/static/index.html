@@ -673,7 +673,7 @@
     </div>
 
     <form id="chat-form">
-      <input id="chat-input" placeholder="Ask about library papers, request visual synthesis, or audit drafts..." autocomplete="off" autofocus>
+      <input id="input" name="chat-input" placeholder="Ask about library papers, request visual synthesis, or audit drafts..." autocomplete="off" autofocus>
       <button class="btn-primary" type="submit">
         <span class="material-symbols-outlined" style="font-size:1.1rem;">send</span>
         Send
@@ -820,7 +820,7 @@ let projectChatLogs = {}; // Maps projectId -> HTML content of chat #log
 // DOM Elements
 const log = document.getElementById("log");
 const chatForm = document.getElementById("chat-form");
-const chatInput = document.getElementById("chat-input");
+const chatInput = document.getElementById("input") || document.getElementById("chat-input");
 
 function escapeHtml(str) {
   if (!str) return "";
