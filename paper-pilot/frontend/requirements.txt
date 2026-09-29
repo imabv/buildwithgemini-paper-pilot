@@ -4,3 +4,9 @@ a2a-sdk
 httpx
 google-auth
 google-cloud-firestore
+google-cloud-storage
+matplotlib
+pypdf
+python-multipart
+pillow
+google-genai
