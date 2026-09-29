@@ -11,9 +11,14 @@ Features:
 
 import io
 import os
+import sys
 import uuid
 import datetime
 from typing import Optional, List, Dict, Any
+
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
 import google.auth
 import google.auth.transport.requests
@@ -384,12 +389,184 @@ async def upload_document(
 
 
 # ==========================================
+# Scientific Poster Generator Endpoint
+# ==========================================
+
+@app.post("/api/generate_poster")
+async def generate_poster_endpoint(req: Request):
+    """Generate a publication-ready scientific poster for either the project library (default) or a draft."""
+    try:
+        body = await req.json()
+        project_id = body.get("project_id") or "proj-default"
+        target = body.get("target") or "project_library"  # "project_library" or "draft"
+        draft_id = body.get("draft_id")
+
+        db = _get_firestore_client()
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        # Fetch project info
+        p_doc = db.collection(COLLECTION_PROJECTS).document(project_id).get()
+        p_data = p_doc.to_dict() if p_doc.exists else {}
+        project_name = p_data.get("name", "Research Project")
+        project_topic = p_data.get("topic", "Literature Synthesis")
+
+        if target == "draft":
+            # Target is a draft document
+            draft_doc = None
+            if draft_id:
+                d_ref = db.collection(COLLECTION_USER_DOCS).document(draft_id).get()
+                if d_ref.exists:
+                    draft_doc = d_ref.to_dict()
+                    draft_doc["id"] = d_ref.id
+            if not draft_doc:
+                # Get latest draft in this project
+                docs = list(db.collection(COLLECTION_USER_DOCS).where("project_id", "==", project_id).where("doc_type", "==", "user_draft").stream())
+                if docs:
+                    draft_doc = docs[-1].to_dict()
+                    draft_doc["id"] = docs[-1].id
+
+            if not draft_doc:
+                return JSONResponse(status_code=404, content={"error": "No draft document found in this project to create a poster from."})
+
+            draft_title = draft_doc.get("title", "Research Draft")
+            draft_content = draft_doc.get("content", "")
+
+            poster_title = f"DRAFT RESEARCH POSTER: {draft_title.upper()}"
+            subtitle = f"PROJECT: {project_name.upper()} • DRAFT MANUSCRIPT EVALUATION • 2026"
+
+            content_snippets = [line.strip() for line in draft_content.split("\n") if line.strip() and not line.strip().startswith("#")]
+            p_snippet = content_snippets[0] if len(content_snippets) > 0 else "Analysis of novel architectures and performance trade-offs."
+            m_snippet = content_snippets[1] if len(content_snippets) > 1 else "Empirical benchmark evaluation comparing recall, latency, and resource footprint."
+            c_snippet = content_snippets[2] if len(content_snippets) > 2 else "Conclusions corroborate existing baseline performance metrics."
+
+            col1 = ("PROBLEM & MOTIVATION", "#0284C7", [
+                f"• Title: {draft_title}",
+                f"• Context: {p_snippet[:130]}",
+                "• Motivation: Identify performance bounds and resolve inconsistencies in existing literature."
+            ])
+            col2 = ("PROPOSED METHODOLOGY & CLAIMS", "#4338CA", [
+                f"• Approach: {m_snippet[:130]}",
+                "• Evaluation: Systematic testing across diverse query sets and memory constraints.",
+                "• Core Claims: Demonstrates superior throughput and validated stability under peak workloads."
+            ])
+            col3 = ("GROUNDING & CONTRIBUTIONS", "#047857", [
+                f"• Key Findings: {c_snippet[:130]}",
+                "• Literature Grounding: Corroborated with peer-reviewed papers in project library.",
+                "• Novel Contributions: Actionable design guidelines and robust benchmark figures."
+            ])
+
+        else:
+            # Target is project_library (default)
+            paper_ids = p_data.get("paper_ids", [])
+            papers = []
+            if paper_ids:
+                for pid in paper_ids[:6]:
+                    rdoc = db.collection(COLLECTION_RESOURCES).document(pid).get()
+                    if rdoc.exists:
+                        p_dict = rdoc.to_dict()
+                        p_dict["id"] = rdoc.id
+                        papers.append(p_dict)
+            if not papers:
+                q = db.collection(COLLECTION_RESOURCES).stream()
+                papers = [d.to_dict() for d in q][:6]
+
+            poster_title = f"RESEARCH SYNTHESIS POSTER: {project_name.upper()}"
+            subtitle = f"TOPIC: {project_topic.upper()} • CURATED PROJECT LIBRARY CORPUS • 2026"
+
+            corpus_items = []
+            for p in papers[:4]:
+                p_title = p.get("title", "Research Paper")
+                p_yr = p.get("year", 2026)
+                corpus_items.append(f"• {p_title[:45]}... ({p_yr})")
+            if not corpus_items:
+                corpus_items = ["• No catalogued papers in library yet. Add papers via arXiv or document upload."]
+
+            args_items = []
+            for p in papers:
+                for arg in p.get("arguments", []):
+                    if len(args_items) < 3 and len(arg) > 10:
+                        args_items.append(f"• {arg[:100]}")
+            if not args_items:
+                args_items = [
+                    "• Comparative algorithmic evaluation across vector quantization and traversal.",
+                    "• Latency-recall trade-off modeling under concurrent multi-tenant loads."
+                ]
+
+            synth_items = []
+            for p in papers:
+                for c in p.get("conclusions", []) if isinstance(p.get("conclusions"), list) else [p.get("conclusions")]:
+                    if c and len(synth_items) < 2 and len(c) > 10:
+                        synth_items.append(f"• Consensus: {c[:100]}")
+            for p in papers:
+                for contra in p.get("contradictions", []):
+                    if len(synth_items) < 3 and len(contra) > 5:
+                        synth_items.append(f"• Disputed: {contra[:90]}")
+            if not synth_items:
+                synth_items = [
+                    "• Consensus: Hybrid dense-lexical pipelines outperform single-index setups.",
+                    "• Debate: Inconsistent memory footprint scaling under clustered sharding.",
+                    "• Open Question: Generalizability across long-context reasoning regimes."
+                ]
+
+            col1 = ("CURATED LITERATURE CORPUS", "#0284C7", corpus_items)
+            col2 = ("CORE METHODOLOGY & CLAIMS", "#4338CA", args_items)
+            col3 = ("SYNTHESIS & CONTROVERSIES", "#047857", synth_items)
+
+        # Render poster via app.visual_generator
+        from app.visual_generator import create_and_upload_poster
+        poster_res = create_and_upload_poster(
+            title=poster_title,
+            subtitle=subtitle,
+            col1_title=col1[0],
+            col1_color=col1[1],
+            col1_items=col1[2],
+            col2_title=col2[0],
+            col2_color=col2[1],
+            col2_items=col2[2],
+            col3_title=col3[0],
+            col3_color=col3[1],
+            col3_items=col3[2],
+            file_prefix=f"poster_{target}"
+        )
+
+        image_url = poster_res.get("image_url")
+
+        # Save record in user_documents
+        doc_id = f"poster-{uuid.uuid4().hex[:8]}"
+        poster_doc = {
+            "id": doc_id,
+            "title": f"Poster: {poster_title}",
+            "doc_type": "poster_artifact",
+            "content": f"![{poster_title}]({image_url})\n\n**Scientific Poster for {target.replace('_', ' ').title()}**\n\nPublic GCS URL: {image_url}",
+            "project_id": project_id,
+            "topic": project_topic,
+            "image_url": image_url,
+            "created_at": timestamp,
+            "metadata": {"target": target, "poster_title": poster_title}
+        }
+        db.collection(COLLECTION_USER_DOCS).document(doc_id).set(poster_doc)
+
+        return {
+            "success": True,
+            "target": target,
+            "title": poster_title,
+            "image_url": image_url,
+            "item": poster_doc,
+            "markdown_embed": f"![{poster_title}]({image_url})"
+        }
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"Poster generation failed: {str(e)}"})
+
+
+# ==========================================
 # Chat & Report Synthesis Proxy
 # ==========================================
 
 @app.post("/chat")
 async def chat(req: Request):
     """Proxy conversation to the deployed A2A Agent Runtime agent.
+    Maintains separate conversation contexts per project via session_key = f"{user_id}:{project_id}".
     If the response contains a comprehensive research report or audit, save it into user_documents.
     """
     try:
@@ -397,7 +574,22 @@ async def chat(req: Request):
         message = body.get("message", "")
         user_id = body.get("user_id") or "web-user"
         project_id = body.get("project_id") or "proj-default"
+        session_key = f"{user_id}:{project_id}"
         parts: list[dict] = []
+
+        # Look up active project workspace details for ground context
+        db = _get_firestore_client()
+        proj_doc = db.collection(COLLECTION_PROJECTS).document(project_id).get()
+        proj_data = proj_doc.to_dict() if proj_doc.exists else {}
+        proj_name = proj_data.get("name", "General Literature Synthesis")
+        proj_topic = proj_data.get("topic", "General Research")
+        proj_papers = proj_data.get("paper_ids", [])
+
+        scoped_message = (
+            f"[Active Project Workspace: '{proj_name}' (ID: {project_id}) | Topic Focus: '{proj_topic}' | "
+            f"Assigned Project Papers: {proj_papers}]\n"
+            f"{message}"
+        )
 
         headers = _auth_headers()
         async with httpx.AsyncClient(headers=headers, timeout=120) as client:
@@ -410,21 +602,25 @@ async def chat(req: Request):
             )
             a2a_client = await create_client(A2A_BASE, config)
 
+            if session_key not in _contexts:
+                _contexts[session_key] = str(uuid.uuid4())
+            context_id = _contexts[session_key]
+
             msg = Message(
                 message_id=str(uuid.uuid4()),
                 role=Role.ROLE_USER,
-                parts=[Part(text=message)],
-                context_id=_contexts.get(user_id, ""),
+                parts=[Part(text=scoped_message)],
+                context_id=context_id,
             )
 
             async for chunk in a2a_client.send_message(SendMessageRequest(message=msg)):
                 if chunk.HasField("artifact_update"):
                     if chunk.artifact_update.context_id:
-                        _contexts[user_id] = chunk.artifact_update.context_id
+                        _contexts[session_key] = chunk.artifact_update.context_id
                     parts.extend(_extract_parts(chunk.artifact_update.artifact.parts))
                 elif chunk.HasField("task"):
                     if chunk.task.context_id:
-                        _contexts[user_id] = chunk.task.context_id
+                        _contexts[session_key] = chunk.task.context_id
                     for artifact in chunk.task.artifacts:
                         parts.extend(_extract_parts(artifact.parts))
                 elif chunk.HasField("message"):

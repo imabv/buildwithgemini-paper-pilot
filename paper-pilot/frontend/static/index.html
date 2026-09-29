@@ -591,6 +591,13 @@
           <input type="text" id="lib-search" placeholder="Search in project library..." oninput="filterProjectLibrary()">
         </div>
       </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.35rem 0.75rem; background: #eef2ff; border-radius: 6px; margin: 0.4rem 0.75rem 0 0.75rem;">
+        <span style="font-size:0.75rem; font-weight:600; color:var(--primary);">Library Visuals:</span>
+        <button class="btn-primary" style="font-size:0.72rem; padding:0.25rem 0.55rem; border-radius:4px;" onclick="generatePosterDirect('project_library')">
+          <span class="material-symbols-outlined" style="font-size:0.85rem;">palette</span>
+          Generate Library Poster
+        </button>
+      </div>
       <div class="item-list" id="project-library-list">
         <!-- Rendered dynamically -->
       </div>
@@ -624,6 +631,13 @@
           <input type="text" id="docs-search" placeholder="Search notes, drafts & reports..." oninput="filterUserDocs()">
         </div>
       </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.35rem 0.75rem; background: #ecfdf5; border-radius: 6px; margin: 0.4rem 0.75rem 0 0.75rem;">
+        <span style="font-size:0.75rem; font-weight:600; color:#047857;">Manuscript Visuals:</span>
+        <button class="btn-primary" style="font-size:0.72rem; padding:0.25rem 0.55rem; border-radius:4px; background:#047857;" onclick="openPosterModal('draft')">
+          <span class="material-symbols-outlined" style="font-size:0.85rem;">palette</span>
+          Generate Draft Poster
+        </button>
+      </div>
       <div class="item-list" id="user-docs-list">
         <!-- Rendered dynamically -->
       </div>
@@ -632,7 +646,7 @@
     <!-- Quick Prompts Bar -->
     <div class="quick-prompts">
       <button class="quick-btn" onclick="sendPrompt('Generate a comprehensive synthesis report for our project library.')">📊 Synthesize Library</button>
-      <button class="quick-btn" onclick="sendPrompt('Generate a conceptual architecture visual artifact for our research synthesis.')">🎨 Visual Synthesis</button>
+      <button class="quick-btn" onclick="openPosterModal('project_library')">🎨 Visual Synthesis Poster</button>
       <button class="quick-btn" onclick="sendPrompt('Audit our project draft against the literature in our project library.')">🔍 Audit Draft</button>
       <button class="quick-btn" onclick="sendPrompt('Search arXiv for recent papers on Retrieval Augmented Generation.')">🌐 Search arXiv</button>
     </div>
@@ -745,22 +759,190 @@
   </div>
 </div>
 
+<!-- Modal: Visual Synthesis Poster Generator -->
+<div class="modal-overlay" id="poster-modal">
+  <div class="modal" style="max-width: 520px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="material-symbols-outlined" style="color:var(--primary); font-size:1.3rem;">palette</span>
+        Scientific Research Poster Generator
+      </div>
+      <button class="modal-close" onclick="closeModal('poster-modal')">&times;</button>
+    </div>
+
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:1rem; line-height:1.4;">
+      Generate a publication-grade, 3-column academic conference poster (16:9 widescreen) synthesizing literature evidence, theoretical arguments, and empirical conclusions.
+    </p>
+
+    <div class="form-group">
+      <label>Poster Synthesis Target:</label>
+      <div style="display:flex; gap:1.25rem; margin-top:0.4rem; padding: 0.6rem; background:#f8fafc; border-radius:6px; border:1px solid var(--border);">
+        <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.82rem; font-weight:600; cursor:pointer;">
+          <input type="radio" name="poster-target" value="project_library" checked onchange="togglePosterTarget(this.value)">
+          📚 Project Library (Default)
+        </label>
+        <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.82rem; font-weight:600; cursor:pointer;">
+          <input type="radio" name="poster-target" value="draft" onchange="togglePosterTarget(this.value)">
+          📝 Draft Manuscript
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group" id="poster-draft-select-group" style="display:none; flex-direction:column; gap:0.35rem;">
+      <label>Select Draft to Synthesize:</label>
+      <select id="poster-draft-select" style="width:100%; padding:0.45rem; border-radius:6px; border:1px solid var(--border); font-size:0.82rem;">
+      </select>
+    </div>
+
+    <div id="poster-status-msg" style="display:none; font-size:0.82rem; color:var(--primary); margin-top:0.5rem; text-align:center;">
+      <span class="material-symbols-outlined" style="vertical-align:middle; animation:spin 1.5s linear infinite;">sync</span>
+      Rendering poster & publishing to Cloud Storage...
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('poster-modal')">Cancel</button>
+      <button class="btn-primary" id="btn-run-poster" onclick="submitPosterGeneration()">
+        <span class="material-symbols-outlined" style="font-size:1rem;">brush</span>
+        Generate Poster
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 let projects = [];
 let currentProjectId = "proj-default";
 let allResources = [];
 let userDocuments = [];
 let currentTopic = "All";
+let projectChatLogs = {}; // Maps projectId -> HTML content of chat #log
 
 // DOM Elements
 const log = document.getElementById("log");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function openModal(id) { document.getElementById(id).classList.add("open"); }
 function closeModal(id) { document.getElementById(id).classList.remove("open"); }
 function openNewProjectModal() { openModal("project-modal"); }
 function openUploadModal() { openModal("upload-modal"); }
+
+function openPosterModal(defaultTarget = "project_library") {
+  const libRadio = document.querySelector('input[name="poster-target"][value="project_library"]');
+  const draftRadio = document.querySelector('input[name="poster-target"][value="draft"]');
+  if (defaultTarget === "draft" && draftRadio) {
+    draftRadio.checked = true;
+  } else if (libRadio) {
+    libRadio.checked = true;
+  }
+  togglePosterTarget(defaultTarget);
+  populateDraftSelect();
+  openModal("poster-modal");
+}
+
+function togglePosterTarget(val) {
+  const group = document.getElementById("poster-draft-select-group");
+  if (group) group.style.display = val === "draft" ? "flex" : "none";
+}
+
+function populateDraftSelect() {
+  const select = document.getElementById("poster-draft-select");
+  if (!select) return;
+  select.innerHTML = "";
+  const drafts = userDocuments.filter(d => d.doc_type === "user_draft");
+  if (!drafts.length) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "(No user drafts uploaded yet in this project)";
+    select.appendChild(opt);
+  } else {
+    drafts.forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = `${d.title} (${d.topic || 'General'})`;
+      select.appendChild(opt);
+    });
+  }
+}
+
+async function submitPosterGeneration() {
+  const target = document.querySelector('input[name="poster-target"]:checked')?.value || "project_library";
+  const draftId = document.getElementById("poster-draft-select")?.value || null;
+  
+  if (target === "draft" && !draftId) {
+    alert("Please select or upload a draft manuscript first.");
+    return;
+  }
+
+  const btn = document.getElementById("btn-run-poster");
+  const statusMsg = document.getElementById("poster-status-msg");
+  if (btn) btn.disabled = true;
+  if (statusMsg) statusMsg.style.display = "block";
+
+  closeModal("poster-modal");
+  if (btn) btn.disabled = false;
+  if (statusMsg) statusMsg.style.display = "none";
+
+  await generatePosterDirect(target, draftId);
+}
+
+async function generatePosterDirect(target = "project_library", draftId = null) {
+  const targetLabel = target === "draft" ? "Draft Manuscript" : "Project Library";
+  const thinking = appendBubble("agent", `_Synthesizing publication-grade 3-column scientific poster for ${targetLabel}..._`, "PaperPilot");
+
+  try {
+    const res = await fetch("/api/generate_poster", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: currentProjectId,
+        target: target,
+        draft_id: draftId
+      })
+    });
+    const data = await res.json();
+    thinking.parentElement.remove();
+
+    if (data.success && data.image_url) {
+      const bubble = appendBubble("agent", "", "PaperPilot Scientific Visual");
+      bubble.innerHTML = `
+        <div style="background: rgba(14, 165, 233, 0.06); border: 1.5px solid #0284C7; border-radius: 8px; padding: 14px; margin-top: 4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h4 style="margin: 0; color: #0284C7; font-size:0.95rem;">🎨 ${escapeHtml(data.title)}</h4>
+            <span class="tag-badge badge-paper">16:9 Scientific Poster</span>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">
+            Grounded academic poster synthesized for <strong>${escapeHtml(targetLabel)}</strong>.
+          </p>
+          <a href="${data.image_url}" target="_blank" rel="noopener noreferrer">
+            <img src="${data.image_url}" alt="${escapeHtml(data.title)}" style="width: 100%; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display:block; margin-bottom:10px; cursor:zoom-in;" />
+          </a>
+          <div style="display: flex; gap: 8px; flex-wrap:wrap;">
+            <a href="${data.image_url}" target="_blank" class="btn-primary" style="font-size: 0.78rem; text-decoration:none;">🔍 Open Full-Res Poster</a>
+            <a href="${data.image_url}" download="poster.png" class="btn-outline" style="font-size: 0.78rem; text-decoration:none;">⬇️ Download PNG</a>
+          </div>
+        </div>
+      `;
+      await loadUserDocuments(); // Refresh My Documents tab
+    } else {
+      appendBubble("agent", "Error generating poster: " + (data.error || "Unknown error"), "PaperPilot Assistant");
+    }
+  } catch (err) {
+    thinking.parentElement.remove();
+    appendBubble("agent", "Failed to generate poster: " + err.message, "PaperPilot Assistant");
+  }
+  log.scrollTop = log.scrollHeight;
+}
 
 function toggleUploadTypeFields() {
   const isPaper = document.querySelector('input[name="doc-dest"]:checked').value === "paper_resource";
@@ -775,7 +957,7 @@ function switchSidebarTab(tab) {
 }
 
 /* -------------------------------------------------------------
- * Projects Management
+ * Projects Management & Context Preservation
  * ----------------------------------------------------------- */
 async function loadProjects() {
   try {
@@ -799,7 +981,39 @@ async function loadProjects() {
 }
 
 async function onProjectChange() {
-  currentProjectId = document.getElementById("project-select").value;
+  const select = document.getElementById("project-select");
+  const newProjectId = select.value;
+  if (currentProjectId && currentProjectId !== newProjectId) {
+    projectChatLogs[currentProjectId] = document.getElementById("log").innerHTML;
+  }
+  currentProjectId = newProjectId;
+
+  // Restore or reset chat log for this project workspace
+  const log = document.getElementById("log");
+  if (projectChatLogs[currentProjectId]) {
+    log.innerHTML = projectChatLogs[currentProjectId];
+  } else {
+    const proj = projects.find(p => p.id === currentProjectId);
+    const projName = proj ? proj.name : "Selected Project";
+    const projTopic = proj && proj.topic ? proj.topic : "";
+    log.innerHTML = `
+      <div class="msg agent">
+        <div class="sender-tag">
+          <span class="material-symbols-outlined" style="font-size:1rem; color:var(--primary);">smart_toy</span>
+          PaperPilot Assistant
+        </div>
+        <div class="bubble">
+          <strong>Switched to project workspace: ${escapeHtml(projName)}</strong>
+          ${projTopic ? `<br><span style="font-size:0.82rem; color:var(--text-secondary);">Focus: <em>${escapeHtml(projTopic)}</em></span>` : ''}
+          <br><br>
+          • <b>Isolated Context:</b> This workspace maintains its own conversation memory and session state.
+          <br>
+          • <b>Visual Synthesis:</b> Click <b>🎨 Visual Synthesis Poster</b> to generate a poster for this library (default) or an uploaded draft.
+        </div>
+      </div>
+    `;
+  }
+  log.scrollTop = log.scrollHeight;
   renderAll();
 }
 
@@ -1064,26 +1278,51 @@ function renderUserDocuments() {
     const card = document.createElement("div");
     card.className = "doc-card";
     const isReport = d.doc_type === "generated_report";
-    const badgeClass = isReport ? "badge-report" : "badge-draft";
-    const badgeLabel = isReport ? "Generated Report" : "User Draft";
+    const isPoster = d.doc_type === "poster_artifact";
+    let badgeClass = "badge-draft";
+    let badgeLabel = "User Draft";
+    if (isPoster) {
+      badgeClass = "badge-paper";
+      badgeLabel = "Scientific Poster";
+    } else if (isReport) {
+      badgeClass = "badge-report";
+      badgeLabel = "Generated Report";
+    }
 
     card.onclick = () => {
-      if (isReport) {
+      if (isPoster && d.image_url) {
+        window.open(d.image_url, "_blank");
+      } else if (isReport) {
         appendReportBubble("agent", d.content, d.title);
       } else {
         sendPrompt(`Audit my user draft titled "${d.title}" against our project library.`);
       }
     };
 
+    const posterBtn = (!isReport && !isPoster) ? 
+      `<div style="margin-top:6px; display:flex; gap:6px;">
+        <button class="btn-outline" style="font-size:0.72rem; padding:0.2rem 0.5rem;" title="Generate 16:9 Scientific Poster for this Draft" onclick="event.stopPropagation(); generatePosterDirect('draft', '${d.id}')">
+          <span class="material-symbols-outlined" style="font-size:0.85rem; vertical-align:middle;">palette</span>
+          Create Poster
+        </button>
+      </div>` : '';
+
+    const posterPreview = (isPoster && d.image_url) ?
+      `<div style="margin-top:6px;">
+        <img src="${d.image_url}" alt="${escapeHtml(d.title)}" style="width:100%; max-height:85px; object-fit:cover; border-radius:4px; border:1px solid var(--border);" />
+      </div>` : '';
+
     card.innerHTML = `
       <div class="card-header-row">
-        <span class="res-title">${d.title}</span>
+        <span class="res-title">${escapeHtml(d.title)}</span>
         <span class="tag-badge ${badgeClass}">${badgeLabel}</span>
       </div>
       <div class="res-meta">
         <span>${new Date(d.created_at || Date.now()).toLocaleDateString()}</span>
-        <span>${d.topic || 'Research'}</span>
+        <span>${escapeHtml(d.topic || 'Research')}</span>
       </div>
+      ${posterPreview}
+      ${posterBtn}
     `;
     list.appendChild(card);
   });
